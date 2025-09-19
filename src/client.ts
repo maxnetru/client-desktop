@@ -6,6 +6,9 @@ import { question } from "readline-sync";
 import { decrypt, deriveSharedKey, encrypt, genKeypair } from "./crypto";
 import { decodePacket, encodePacket, IncomingPacket, OutcomingPacket } from "./packets";
 
+process.on("uncaughtException", err => console.error(err));
+process.on("unhandledRejection", err => console.error(err));
+
 const keys = await genKeypair();
 let globalSecret: CryptoKey;
 
