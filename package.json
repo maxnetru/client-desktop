@@ -1,0 +1,32 @@
+{
+  "name": "maxnet-client-desktop",
+  "version": "0.1.0",
+  "description": "maxnet client for desktop",
+  "keywords": [
+    "maxnet",
+    "max",
+    "proxy"
+  ],
+  "homepage": "https://github.com/maxnetru/client-desktop#readme",
+  "bugs": {
+    "url": "https://github.com/maxnetru/client-desktop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxnetru/client-desktop.git"
+  },
+  "license": "MIT",
+  "author": "Milk_Cool",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/client.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "tsx": "^4.20.5"
+  },
+  "dependencies": {
+    "base85": "^3.2.0",
+    "readline-sync": "^1.4.10"
+  }
+}
