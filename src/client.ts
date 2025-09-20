@@ -55,6 +55,7 @@ const getEnc = async (packet: string) => {
 
 client.addMessageHandler(async packet => {
     if(packet.opcode === 1 || packet.cmd === 3) {
+        console.log("reconnect");
         await client.reopen();
         await client.presentDevice(authData.id);
         afterTokenData = await client.presentToken(authData.token);
