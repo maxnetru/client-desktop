@@ -1,6 +1,6 @@
 import { Client } from "./max";
 
-const TIMEOUT_TIME = 200;
+const TIMEOUT_TIME = 400;
 
 export class OutcomingAccumulator {
     private packets: { n: number, enc: string }[] = [];
