@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import { question } from "readline-sync";
 import { decrypt, deriveSharedKey, encrypt, genKeypair } from "./crypto";
 import { decodePacket, encodePacket, IncomingPacket, OutcomingPacket } from "./packets";
+import { IncomingAccumulator, OutcomingAccumulator } from "./accumulator";
 
 process.on("uncaughtException", err => console.error(err));
 process.on("unhandledRejection", err => console.error(err));
@@ -43,6 +44,9 @@ type ProxyRequest = {
 };
 let lastReqSeq = 0;
 const proxyRequests: ProxyRequest[] = [];
+
+const incomingAccumulators: Record<number, IncomingAccumulator> = {};
+const outcomingAccumulators: Record<number, OutcomingAccumulator> = {};
 
 const getEnc = async (packet: string) => {
     const enc = await encrypt(Buffer.from(packet), globalSecret);
@@ -84,13 +88,19 @@ const proxyServer = http.createServer(async (req, res) => {
     console.log(req.url);
     const reqseq = lastReqSeq++;
     let datseq = 0;
+    incomingAccumulators[reqseq] = new IncomingAccumulator(data => {
+        if(data.length === 0) res.end();
+        else res.write(data);
+    });
+    outcomingAccumulators[reqseq] = new OutcomingAccumulator(client, chatID);
     proxyRequests.push({
         type: "http",
         reqseq,
         cb: (packet: IncomingPacket) => {
             if(packet.type === "resData") {
-                if(packet.data.length === 0) res.end();
-                else res.write(packet.data);
+                // if(packet.data.length === 0) res.end();
+                // else res.write(packet.data);
+                incomingAccumulators[reqseq].addPacket(packet.datseq, packet.data);
             } else if(packet.type === "res") {
                 res.writeHead(packet.status, packet.statusText, packet.headers.flat());
             }
@@ -114,7 +124,7 @@ const proxyServer = http.createServer(async (req, res) => {
             datseq: datseq++,
             data
         };
-        await client.sendMessage(chatID, await getEnc(encodePacket(packet)));
+        outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
     });
 });
 proxyServer.on("connect", async (req, sock, head) => {
@@ -122,13 +132,19 @@ proxyServer.on("connect", async (req, sock, head) => {
     const reqseq = lastReqSeq++;
     let datseq = 0;
 
+    incomingAccumulators[reqseq] = new IncomingAccumulator(data => {
+        if(data.length === 0) sock.end();
+        else sock.write(data);
+    });
+    outcomingAccumulators[reqseq] = new OutcomingAccumulator(client, chatID);
     proxyRequests.push({
         type: "https",
         reqseq,
         cb: (packet: IncomingPacket) => {
             if(packet.type !== "encData") return;
-            if(packet.data.length === 0) sock.end();
-            else sock.write(packet.data);
+            // if(packet.data.length === 0) sock.end();
+            // else sock.write(packet.data);
+            incomingAccumulators[reqseq].addPacket(packet.datseq, packet.data);
         }
     });
     const packet: OutcomingPacket = {
@@ -145,7 +161,7 @@ proxyServer.on("connect", async (req, sock, head) => {
             datseq: datseq++,
             data
         };
-        await client.sendMessage(chatID, await getEnc(encodePacket(packet)));
+        outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
     });
     sock.write(`HTTP/1.1 200 Connection Established
 Proxy-agent: maxnet
