@@ -91,7 +91,8 @@ const proxyServer = http.createServer(async (req, res) => {
     console.log(req.url);
     const reqseq = lastReqSeq++;
     let datseq = 0;
-    incomingAccumulators[reqseq] = new IncomingAccumulator(data => {
+    incomingAccumulators[reqseq] = new IncomingAccumulator((data, n) => {
+        console.log(`${reqseq} ${req.url} - datseq ${n === 0xffffffff ? "end" : n} ${data.length}`);
         if(data.length === 0) res.end();
         else res.write(data);
     });
@@ -120,14 +121,16 @@ const proxyServer = http.createServer(async (req, res) => {
         body: Buffer.alloc(0)
     };
     await client.sendMessage(chatID, await getEnc(encodePacket(packet)));
-    req.on("data", async data => {
+    req.on("data", data => {
         const packet: OutcomingPacket = {
             type: "reqData",
             reqseq,
             datseq: datseq++,
             data
         };
-        outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
+        // don't care about synchronization here, as we are using accumulators
+        // in fact, this helps to not mess up the order of datseq's
+        (async () => outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet))))();
     });
     req.on("end", async () => {
         const packet: OutcomingPacket = {
@@ -144,7 +147,8 @@ proxyServer.on("connect", async (req, sock, head) => {
     const reqseq = lastReqSeq++;
     let datseq = 0;
 
-    incomingAccumulators[reqseq] = new IncomingAccumulator(data => {
+    incomingAccumulators[reqseq] = new IncomingAccumulator((data, n) => {
+        console.log(`${reqseq} ${req.url} - datseq ${n === 0xffffffff ? "end" : n} ${data.length}`);
         if(data.length === 0) sock.end();
         else sock.write(data);
     });
@@ -166,14 +170,14 @@ proxyServer.on("connect", async (req, sock, head) => {
         data: Buffer.alloc(0)
     };
     await client.sendMessage(chatID, await getEnc(encodePacket(packet)));
-    sock.on("data", async data => {
+    sock.on("data", data => {
         const packet: OutcomingPacket = {
             type: "encData",
             reqseq,
             datseq: datseq++,
             data
         };
-        outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
+        (async () => outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet))))();
     });
     sock.on("end", async () => {
         const packet: OutcomingPacket = {
