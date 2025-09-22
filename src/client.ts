@@ -6,6 +6,7 @@ import { question } from "readline-sync";
 import { decrypt, deriveSharedKey, encrypt, genKeypair } from "./crypto";
 import { decodePacket, encodePacket, IncomingPacket, OutcomingPacket } from "./packets";
 import { IncomingAccumulator, OutcomingAccumulator } from "./accumulator";
+import fs from "fs";
 
 process.on("uncaughtException", err => console.error(err));
 process.on("unhandledRejection", err => console.error(err));
@@ -35,7 +36,8 @@ if(!authData.id || !authData.token) {
 let afterTokenData = await client.presentToken(authData.token);
 console.log(`Logged in as ${afterTokenData.profile.contact.names[0].name}`);
 
-const chatID = parseInt(process.env.CHAT_ID || question("chat id: "));
+const chatID = parseInt(process.env.CHAT_ID || (fs.existsSync("id.txt") && fs.readFileSync("id.txt", "utf-8")) || question("chat id: "));
+fs.writeFileSync("id.txt", chatID.toString());
 
 type ProxyRequest = {
     type: "http" | "https",

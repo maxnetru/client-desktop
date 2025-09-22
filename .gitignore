@@ -143,3 +143,6 @@ package-lock.json
 
 # Auth data
 auth-data.json
+
+# Chat ID
+id.txt
