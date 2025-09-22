@@ -70,7 +70,7 @@ client.addMessageHandler(async packet => {
         if(!packet || packet.type !== "key") return;
         const theirPublicKey = await crypto.subtle.importKey("jwk", packet.key, { name: "ECDH", namedCurve: "P-256" }, true, []);
         globalSecret = await deriveSharedKey(keys.privateKey, theirPublicKey);
-        
+        console.log("key exchange done");
     } else if(message.text[0] === "s") {
         // other packet types, encrypted
         const parts = message.text.slice(1).split("~");
