@@ -129,6 +129,15 @@ const proxyServer = http.createServer(async (req, res) => {
         };
         outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
     });
+    req.on("end", async () => {
+        const packet: OutcomingPacket = {
+            type: "reqData",
+            reqseq,
+            datseq: 0xffffffff,
+            data: Buffer.alloc(0)
+        };
+        outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
+    });
 });
 proxyServer.on("connect", async (req, sock, head) => {
     console.log(req.url);
@@ -163,6 +172,15 @@ proxyServer.on("connect", async (req, sock, head) => {
             reqseq,
             datseq: datseq++,
             data
+        };
+        outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
+    });
+    sock.on("end", async () => {
+        const packet: OutcomingPacket = {
+            type: "encData",
+            reqseq,
+            datseq: 0xffffffff,
+            data: Buffer.alloc(0)
         };
         outcomingAccumulators[reqseq].addPacket(packet.datseq, await getEnc(encodePacket(packet)));
     });
