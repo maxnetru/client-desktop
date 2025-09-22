@@ -39,7 +39,7 @@ export class IncomingAccumulator {
 
         packets.sort((a, b) => a.n - b.n);
         for(const packet of packets) {
-            this.cb(packet.data);
+            await this.cb(packet.data);
         }
     }
 }
