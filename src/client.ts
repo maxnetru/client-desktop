@@ -1,5 +1,5 @@
 import http from "http";
-import { Client } from "./max";
+import { Chat, Client } from "./max";
 import * as storage from "./storage";
 import { randomUUID } from "crypto";
 import { question } from "readline-sync";
@@ -36,8 +36,24 @@ if(!authData.id || !authData.token) {
 let afterTokenData = await client.presentToken(authData.token);
 console.log(`Logged in as ${afterTokenData.profile.contact.names[0].name}`);
 
-const chatID = parseInt(process.env.CHAT_ID || (fs.existsSync("id.txt") && fs.readFileSync("id.txt", "utf-8")) || question("chat id: "));
-fs.writeFileSync("id.txt", chatID.toString());
+const getFullName = async (chat: Chat) => {
+    const id = Object.keys(chat.participants).map(x => parseInt(x)).find(x => x !== afterTokenData.profile.contact.id) as number | null;
+    if(id === null) return "";
+    const contacts = await client.getContacts(id);
+    if(contacts === null) return "";
+    const name = contacts.contacts[0].names[0];
+    return `${name.firstName}${name.lastName ? " " + name.lastName : ""}`;
+};
+
+let chatID = parseInt(process.env.CHAT_ID || (fs.existsSync("id.txt") && fs.readFileSync("id.txt", "utf-8")) || "");
+
+if(Number.isNaN(chatID)) {
+    for(const chat of afterTokenData.chats) {
+        console.log(`ID ${chat.id}: ${chat.title || await getFullName(chat)}`)
+    }
+    chatID = parseInt(question("chat id: "));
+}
+if(!Number.isNaN(chatID)) fs.writeFileSync("id.txt", chatID.toString());
 
 type ProxyRequest = {
     type: "http" | "https",
