@@ -5,7 +5,7 @@ const TIMEOUT_TIME = 400;
 export class OutcomingAccumulator {
     private packets: { n: number, enc: string }[] = [];
     private timeout: number | null = null;
-    constructor(private client: Client, private chatID: number) {}
+    constructor(private client: Client, private chatID: number, private delay: number = 50) {}
     addPacket(n: number, enc: string) {
         if(this.timeout !== null) clearTimeout(this.timeout);
         setTimeout(async () => await this.send(), TIMEOUT_TIME);
@@ -18,8 +18,10 @@ export class OutcomingAccumulator {
         this.timeout = null;
 
         packets.sort((a, b) => a.n - b.n);
-        for(const packet of packets)
+        for(const packet of packets) {
             await this.client.sendMessage(this.chatID, packet.enc);
+            await new Promise(resolve => setTimeout(resolve, this.delay));
+        }
     }
 }
 export class IncomingAccumulator {
