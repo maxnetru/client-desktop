@@ -5,7 +5,7 @@ const TIMEOUT_TIME = 200;
 export class OutcomingAccumulator {
     private packets: { n: number, enc: string }[] = [];
     private timeout: number | null = null;
-    constructor(private client: Client, private chatID: number, private delay: number = 50) {}
+    constructor(private client: Client, private chatID: number, private delay: number = 10) {}
     addPacket(n: number, enc: string) {
         if(this.timeout !== null) clearTimeout(this.timeout);
         setTimeout(async () => await this.send(), TIMEOUT_TIME);
