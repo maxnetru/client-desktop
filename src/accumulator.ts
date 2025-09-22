@@ -27,7 +27,7 @@ export class OutcomingAccumulator {
 export class IncomingAccumulator {
     private packets: { n: number, data: Buffer }[] = [];
     private timeout: number | null = null;
-    constructor(private cb: (data: Buffer) => any) {}
+    constructor(private cb: (data: Buffer, n: number) => any) {}
     addPacket(n: number, data: Buffer) {
         if(this.timeout !== null) clearTimeout(this.timeout);
         setTimeout(async () => await this.send(), TIMEOUT_TIME);
@@ -41,7 +41,7 @@ export class IncomingAccumulator {
 
         packets.sort((a, b) => a.n - b.n);
         for(const packet of packets) {
-            await this.cb(packet.data);
+            await this.cb(packet.data, packet.n);
         }
     }
 }
