@@ -69,7 +69,12 @@ export class Client {
     private handler: ((packet: Packet) => void) | null = null;
 
     constructor() {
-        this.ws = new WebSocket(WS_URL);
+        this.ws = new WebSocket(WS_URL, {
+            // @ts-ignore
+            headers: {
+                "Origin": "https://web.max.ru"
+            }
+        });
     }
     async init() {
         this.ws.addEventListener("message", event => {
